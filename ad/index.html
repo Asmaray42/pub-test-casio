@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CASIO Arabic Dial — Spot 33s</title>
+<style>
+@font-face{font-family:Archivo;src:url(fonts/Archivo.ttf) format('truetype');font-weight:100 900;font-stretch:62% 125%}
+@font-face{font-family:Kufi;src:url(fonts/ReemKufi.ttf) format('truetype');font-weight:400 700}
+@font-face{font-family:Amiri;src:url(fonts/Amiri-Bold.ttf) format('truetype');font-weight:700}
+@font-face{font-family:Ruqaa;src:url(fonts/ArefRuqaa-Bold.ttf) format('truetype');font-weight:700}
+
+:root{--W:1920px;--H:1080px}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#000;overflow:hidden}
+body.preview{display:grid;place-items:center;height:100vh}
+#stage{position:relative;width:1920px;height:1080px;overflow:hidden;background:#000;perspective:2200px;
+  font-family:Archivo,sans-serif;color:#fff;transform-origin:0 0}
+.scene{position:absolute;inset:0;visibility:hidden;overflow:hidden;perspective:2200px}
+.fill{position:absolute;inset:0}
+
+/* backgrounds */
+.bg{position:absolute;inset:-60px;background:radial-gradient(ellipse 70% 75% at var(--gx,50%) var(--gy,48%),var(--c1),var(--c2) 78%)}
+.relief{position:absolute;inset:-200px;background:url(img/relief.png) repeat;background-size:1600px 1000px;opacity:var(--ro,.9);
+  -webkit-mask-image:radial-gradient(circle var(--lr,900px) at var(--lx,50%) var(--ly,50%),#000 0%,rgba(0,0,0,.55) 45%,rgba(0,0,0,.18) 100%);
+          mask-image:radial-gradient(circle var(--lr,900px) at var(--lx,50%) var(--ly,50%),#000 0%,rgba(0,0,0,.55) 45%,rgba(0,0,0,.18) 100%)}
+.relief.r2{background-image:url(img/relief_r.png)}
+.glow{position:absolute;inset:0;background:radial-gradient(circle 700px at var(--lx,50%) var(--ly,50%),var(--gl,rgba(255,255,255,.12)),transparent 70%);mix-blend-mode:screen}
+
+/* watch */
+.watch{position:absolute;left:0;top:0;transform-style:flat}
+.watch img.w{position:absolute;inset:0;width:100%;height:100%;filter:drop-shadow(18px 34px 34px rgba(0,0,0,.55))}
+.watch.fade img.w{-webkit-mask-image:linear-gradient(to bottom,transparent 0%,#000 15%,#000 85%,transparent 100%);mask-image:linear-gradient(to bottom,transparent 0%,#000 15%,#000 85%,transparent 100%)}
+.watch .sheen{position:absolute;inset:0;mix-blend-mode:overlay;opacity:.95;
+  background:linear-gradient(108deg,rgba(255,255,255,0) 38%,rgba(255,255,255,.95) 49%,rgba(255,255,255,.95) 51%,rgba(255,255,255,0) 62%);
+  background-size:300% 100%;background-repeat:no-repeat;background-position:var(--sx,130%) 0;
+  -webkit-mask-size:100% 100%;mask-size:100% 100%}
+.watch svg.sec{position:absolute;inset:0;width:100%;height:100%;overflow:visible;filter:drop-shadow(3px 6px 3px rgba(0,0,0,.35))}
+.daywin{position:absolute;overflow:hidden;background:linear-gradient(#f4f4f2,#e4e4e1);border-radius:2px}
+.daywin .strip{position:absolute;left:0;right:0;top:0}
+.daywin .strip div{display:flex;align-items:center;justify-content:center;color:#111;font-weight:700}
+
+/* type */
+.mask{display:block;overflow:hidden;padding:.04em .02em}
+.mask>span{display:inline-block}
+.ch{display:inline-block;will-change:auto}
+.xl{font-weight:900;font-stretch:125%;text-transform:uppercase;line-height:.86;letter-spacing:-.01em}
+.lbl{font-weight:600;font-stretch:110%;letter-spacing:.38em;text-transform:uppercase;font-size:22px}
+.ar{font-family:Kufi;font-weight:600;direction:rtl}
+.num{position:absolute;font-family:Amiri;font-weight:700;line-height:1;white-space:nowrap;
+  background:linear-gradient(165deg,#fff 0%,#c9ced3 20%,#7b838b 42%,#f1f3f5 56%,#8c949c 76%,#e2e6e9 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 14px 16px rgba(0,0,0,.45)) drop-shadow(0 2px 1px rgba(0,0,0,.35))}
+.num.blue{background:linear-gradient(165deg,#5aa8ea 0%,#1d63a8 38%,#4a98dc 58%,#123f72 100%);-webkit-background-clip:text;background-clip:text}
+.num.ghost{filter:none;opacity:.16}
+.metal{background:linear-gradient(170deg,#fff 0%,#dfe3e7 35%,#8f979f 52%,#f5f7f8 66%,#aab2b9 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* overlays */
+#flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+#black{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none}
+#leak{position:absolute;inset:-20%;opacity:0;mix-blend-mode:screen;pointer-events:none;
+  background:radial-gradient(ellipse 40% 60% at 30% 40%,rgba(120,180,255,.55),transparent 70%),radial-gradient(ellipse 35% 50% at 75% 60%,rgba(255,255,255,.4),transparent 70%)}
+#vignette{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 75% 75% at 50% 50%,transparent 58%,rgba(0,0,0,.42) 100%)}
+#grain{position:absolute;inset:0;pointer-events:none;background:url(img/grain.png);opacity:.07;mix-blend-mode:overlay}
+.scrim{position:absolute;pointer-events:none}
+.dof{position:absolute;inset:0;pointer-events:none;-webkit-backdrop-filter:blur(var(--db,7px));backdrop-filter:blur(var(--db,7px));
+  -webkit-mask-image:radial-gradient(ellipse 52% 50% at var(--fx,50%) var(--fy,50%),transparent 45%,#000 100%);
+          mask-image:radial-gradient(ellipse 52% 50% at var(--fx,50%) var(--fy,50%),transparent 45%,#000 100%)}
+.rule{position:absolute;height:2px;background:currentColor;transform-origin:0 50%}
+.callout{position:absolute;overflow:visible}
+.glass{position:absolute;border-radius:999px;background:rgba(8,12,20,.38);-webkit-backdrop-filter:blur(14px) saturate(1.2);backdrop-filter:blur(14px) saturate(1.2);border:1px solid rgba(255,255,255,.22)}
+#hud{position:fixed;left:12px;bottom:10px;color:#888;font:12px monospace;z-index:9}
+</style>
+</head>
+<body>
+<div id="stage"><div id="cam" class="fill">
+
+  <!-- S0 · INTRO : the dial is written, numeral by numeral, tick by tick -->
+  <section class="scene" id="s0" style="--c1:#121417;--c2:#030304;visibility:visible">
+    <div class="bg"></div><div class="relief" style="--ro:.55"></div><div class="glow"></div>
+    <div id="ring" style="position:absolute;left:960px;top:540px;width:0;height:0">
+      <svg id="ringsvg" width="1000" height="1000" viewBox="-500 -500 1000 1000" style="position:absolute;left:-500px;top:-500px;overflow:visible">
+        <defs><linearGradient id="gSil" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#9aa2aa"/><stop offset="1" stop-color="#eef1f3"/></linearGradient></defs>
+        <circle id="track" r="420" fill="none" stroke="rgba(255,255,255,.28)" stroke-width="1.5"/>
+        <g id="minutes"></g>
+        <g id="ringhand"><rect x="-3" y="-400" width="6" height="470" rx="3" fill="url(#gSil)"/><circle r="15" fill="#d9dde1"/><circle r="5" fill="#7c848c"/></g>
+      </svg>
+      <div id="ringnums"></div>
+    </div>
+  </section>
+
+  <!-- S1 · HERO black -->
+  <section class="scene" id="s1" style="--c1:#26282c;--c2:#050506">
+    <div class="bg"></div><div class="relief" style="--ro:.8"></div><div class="glow" style="--gl:rgba(255,255,255,.10)"></div>
+    <div id="heroText" style="position:absolute;left:110px;top:285px">
+      <div class="xl" style="font-size:150px"><span class="mask"><span id="hA">ARABIC</span></span></div>
+      <div class="xl" style="font-size:150px"><span class="mask"><span id="hB">DIAL</span></span></div>
+      <div style="margin-top:34px;display:flex;align-items:center;gap:26px">
+        <div class="rule" id="hRule" style="position:relative;width:90px;color:#cfd4d8"></div>
+        <div class="lbl" id="hC" style="color:#d6dadd">Collection</div>
+      </div>
+      <div class="ar" id="hD" style="font-size:46px;margin-top:18px;color:#c3c9ce;text-align:left">مجموعة الأرقام العربية</div>
+    </div>
+    <div class="idx" id="i1" style="position:absolute;left:120px;bottom:80px;display:flex;align-items:baseline;gap:22px">
+      <span style="font-family:Amiri;font-size:64px" class="metal">٠١</span><span class="lbl" style="color:#e9ecee">Black</span><span class="ar" style="font-size:30px;color:#aab1b7">أسود</span>
+    </div>
+  </section>
+
+  <!-- S2 · colour run -->
+  <section class="scene" id="p_royal" style="--c1:#2a51b8;--c2:#06154a"></section>
+  <section class="scene" id="p_teal"  style="--c1:#1f9cbd;--c2:#043d50"></section>
+  <section class="scene" id="p_ice"   style="--c1:#e1f0f6;--c2:#86adbf"></section>
+  <section class="scene" id="p_silver" style="--c1:#fbfbfc;--c2:#b3bac1"></section>
+
+  <!-- S4 · features -->
+  <section class="scene" id="f1" style="--c1:#2a51b8;--c2:#06154a"></section>
+  <section class="scene" id="f2" style="--c1:#1f9cbd;--c2:#043d50"></section>
+  <section class="scene" id="f3" style="--c1:#26282c;--c2:#050506"></section>
+  <section class="scene" id="f4" style="--c1:#e1f0f6;--c2:#86adbf"></section>
+
+  <!-- S5 · line-up -->
+  <section class="scene" id="lineup" style="background:#000"><div id="lu" class="fill"></div></section>
+
+  <!-- S6 · rapid macro cuts -->
+  <section class="scene" id="m1" style="--c1:#26282c;--c2:#050506"></section>
+  <section class="scene" id="m2" style="--c1:#2a51b8;--c2:#06154a"></section>
+  <section class="scene" id="m3" style="--c1:#1f9cbd;--c2:#043d50"></section>
+  <section class="scene" id="m4" style="--c1:#e1f0f6;--c2:#86adbf"></section>
+
+  <!-- S7 · Arabic tagline -->
+  <section class="scene" id="tag" style="--c1:#ffffff;--c2:#b9c0c7"></section>
+
+  <!-- S8 · end card -->
+  <section class="scene" id="end" style="--c1:#1b1d21;--c2:#030304"></section>
+
+  </div>
+  <div id="leak"></div>
+  <div id="vignette"></div>
+  <div id="grain"></div>
+  <div id="flash"></div>
+  <div id="black"></div>
+</div>
+<div id="hud"></div>
+
+<script src="vendor/gsap.min.js"></script>
+<script src="data.js"></script>
+<script>
+'use strict';
+/* =====================================================================
+   CASIO · Arabic Dial (MTP-E735AR) — 33 s spec spot
+   Edit grid: 120 BPM → beat = 0.5 s, bar = 2 s (shared with tools/music.py)
+   Everything is a pure function of time: window.seek(t) renders frame t.
+   ===================================================================== */
+const BEAT = 0.5, DUR = 33.0, S3 = 3;          // S3: watch PNGs are 3× the cut-out geometry
+const $ = (s, r = document) => r.querySelector(s);
+const el = (tag, cls, parent, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; if (parent) parent.appendChild(e); return e; };
+const AR = n => String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
+const W = window.WATCH;
+const COL = {
+  black:  { c1:'#26282c', c2:'#050506', dark:true,  name:'Black',      ar:'أسود',        hand:'#e7eaed' },
+  royal:  { c1:'#2a51b8', c2:'#06154a', dark:true,  name:'Royal Blue', ar:'أزرق ملكي',   hand:'#e7eaed' },
+  teal:   { c1:'#1f9cbd', c2:'#043d50', dark:true,  name:'Teal',       ar:'أزرق بترولي', hand:'#e7eaed' },
+  ice:    { c1:'#e1f0f6', c2:'#86adbf', dark:false, name:'Ice Blue',   ar:'أزرق جليدي',  hand:'#c9d1d6' },
+  silver: { c1:'#fbfbfc', c2:'#b3bac1', dark:false, name:'Silver',     ar:'فضي',         hand:'#1f6aab' },
+};
+const ORDER = ['black', 'royal', 'teal', 'ice', 'silver'];
+const tl = gsap.timeline({ paused: true });
+const frameHooks = [];        // per-frame functions f(t)
+const watches = [];           // every watch instance (for ticking)
+
+/* ---------- helpers ---------------------------------------------------- */
+function bgLayers(scene, opts = {}) {
+  el('div', 'bg', scene);
+  const r = el('div', 'relief' + (opts.r2 ? ' r2' : ''), scene); if (opts.ro != null) r.style.setProperty('--ro', opts.ro);
+  const g = el('div', 'glow', scene); if (opts.gl) g.style.setProperty('--gl', opts.gl);
+  return { relief: r, glow: g };
+}
+function makeWatch(name, parent, opts = {}) {
+  const d = W[name];
+  const w = el('div', 'watch' + (opts.fade ? ' fade' : ''), parent);
+  const Wpx = d.w * S3, Hpx = d.h * S3, cx = d.cx * S3, cy = d.cy * S3;
+  w.style.width = Wpx + 'px'; w.style.height = Hpx + 'px';
+  w.style.transformOrigin = `${cx}px ${cy}px`;
+  const img = el('img', 'w', w); img.src = `img/watch_${name}.png`;
+  // live seconds hand (the printed one was removed from the photo)
+  const L = d.tip * S3 + 4, col = COL[name].hand;
+  const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  s.setAttribute('class', 'sec'); s.setAttribute('viewBox', `0 0 ${Wpx} ${Hpx}`);
+  const dark = name === 'silver' ? '#0f3f6e' : '#7d868e';
+  s.innerHTML = `<defs><linearGradient id="hg_${name}_${watches.length}" x1="0" x2="1"><stop offset="0" stop-color="${dark}"/><stop offset=".5" stop-color="${col}"/><stop offset="1" stop-color="${dark}"/></linearGradient></defs>
+    <g class="hand" transform="rotate(216 ${cx} ${cy})">
+      <polygon points="${cx - 4.2},${cy + 34} ${cx + 4.2},${cy + 34} ${cx + 1.6},${cy - L} ${cx - 1.6},${cy - L}" fill="url(#hg_${name}_${watches.length})"/>
+      <circle cx="${cx}" cy="${cy}" r="10" fill="${col}"/><circle cx="${cx}" cy="${cy}" r="10" fill="none" stroke="${dark}" stroke-width="1.5" opacity=".6"/>
+      <circle cx="${cx}" cy="${cy}" r="3.2" fill="${dark}"/>
+    </g>`;
+  w.appendChild(s);
+  const sh = el('div', 'sheen', w);
+  sh.style.webkitMaskImage = sh.style.maskImage = `url(img/watch_${name}.png)`;
+  if (!COL[name].dark) { sh.style.mixBlendMode = 'screen'; sh.style.opacity = .5; }
+  const rec = { el: w, name, d, cx, cy, hand: s.querySelector('.hand'), sheen: sh, offset: opts.offset || 0, scene: parent.closest('.scene') };
+  watches.push(rec);
+  return rec;
+}
+// transform so that point p (cut-out px coords; default pivot) lands on screen (X,Y) at scale s
+function at(rec, X, Y, s, p) {
+  const px = p ? p[0] * S3 : rec.cx, py = p ? p[1] * S3 : rec.cy;
+  return { x: X - rec.cx - s * (px - rec.cx), y: Y - rec.cy - s * (py - rec.cy), scale: s };
+}
+function sheen(rec, t, dur = 0.8, from = 130, to = -30) {
+  tl.fromTo(rec.sheen, { '--sx': from + '%' }, { '--sx': to + '%', duration: dur, ease: 'power2.inOut' }, t);
+}
+function split(node) {
+  const txt = node.textContent; node.textContent = '';
+  return [...txt].map(c => { const s = el('span', 'ch', node); s.textContent = c === ' ' ? ' ' : c; return s; });
+}
+function show(sel, t0, t1) {           // scene visibility window
+  tl.set(sel, { visibility: 'visible' }, t0);
+  if (t1 != null) tl.set(sel, { visibility: 'hidden' }, t1);
+}
+function flash(t, a = .85, d = .35, color = '#fff') {
+  tl.set('#flash', { background: color }, t - 0.001);
+  tl.fromTo('#flash', { opacity: a }, { opacity: 0, duration: d, ease: 'power2.out', immediateRender: false }, t);
+}
+function lightPath(scene, t0, t1, x0, y0, x1, y1, ease = 'sine.inOut') {
+  tl.fromTo(scene, { '--lx': x0 + '%', '--ly': y0 + '%' }, { '--lx': x1 + '%', '--ly': y1 + '%', duration: t1 - t0, ease, immediateRender: false }, t0);
+}
+function idxLabel(parent, n, name, light) {
+  const c = light ? '#0e2a4a' : '#eef1f3', c2 = light ? '#36536f' : '#b4bbc1';
+  const g = el('div', '', parent, `<span style="font-family:Amiri;font-size:64px;color:${c}">${AR('0' + n)}</span><span class="lbl" style="color:${c}">${COL[ORDER[n - 1]].name}</span><span class="ar" style="font-size:30px;color:${c2}">${COL[ORDER[n - 1]].ar}</span>`);
+  Object.assign(g.style, { position: 'absolute', left: '120px', bottom: '80px', display: 'flex', alignItems: 'baseline', gap: '22px' });
+  return g;
+}
+function bigNum(parent, txt, x, y, size, cls = '') {
+  const n = el('div', 'num ' + cls, parent); n.textContent = txt;
+  Object.assign(n.style, { left: x + 'px', top: y + 'px', fontSize: size + 'px' });
+  return n;
+}
+
+/* ---------- S0 · INTRO 0–4 s ------------------------------------------- */
+(() => {
+  tl.set('#s0', { visibility: 'hidden' }, 4.08);
+  const s0 = $('#s0');
+  lightPath(s0, 0, 4, 18, 20, 62, 60);
+  tl.fromTo(s0, { '--lr': '350px' }, { '--lr': '1100px', duration: 4, ease: 'power1.in' }, 0);
+  // minute ticks + track draw
+  const mg = $('#minutes'); let mh = '';
+  for (let i = 0; i < 60; i++) { const a = i * 6, big = i % 5 === 0; mh += `<line x1="0" y1="${-420}" x2="0" y2="${big ? -392 : -406}" stroke="${big ? '#e6e9ec' : 'rgba(255,255,255,.45)'}" stroke-width="${big ? 4 : 2}" transform="rotate(${a})"/>`; }
+  mg.innerHTML = mh;
+  const C = 2 * Math.PI * 420, track = $('#track');
+  track.setAttribute('stroke-dasharray', C);
+  tl.fromTo(track, { strokeDashoffset: C }, { strokeDashoffset: 0, duration: 3.9, ease: 'power2.inOut' }, 0);
+  tl.fromTo('#minutes line', { opacity: 0 }, { opacity: 1, duration: .25, stagger: 3.6 / 60, ease: 'none' }, 0.1);
+  // numerals ١…١٢ appear on the ticks (quarters, then eighths)
+  const times = [0, .5, 1, 1.5, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75];
+  const wrap = $('#ringnums');
+  times.forEach((t, k) => {
+    const n = k + 1, a = n * 30 * Math.PI / 180, R = 318;
+    const d = el('div', 'num', wrap); d.textContent = AR(n);
+    Object.assign(d.style, { fontSize: '118px', left: (Math.sin(a) * R) + 'px', top: (-Math.cos(a) * R) + 'px', transform: 'translate(-50%,-58%)' });
+    tl.fromTo(d, { opacity: 0, scale: 1.9, filter: 'blur(16px)' }, { opacity: 1, scale: 1, filter: 'blur(0px)', duration: .32, ease: 'expo.out', immediateRender: true }, t);
+  });
+  // the seconds hand points at each numeral as it lands
+  frameHooks.push(t => {
+    if (t > 4.1) return;
+    let k = 0; for (let i = 0; i < times.length; i++) if (t >= times[i]) k = i;
+    const f = Math.min((t - times[k]) / 0.07, 1), ov = f < 1 ? gsap.parseEase('back.out(3)')(f) : 1;
+    const prev = k === 0 ? -30 : k * 30, cur = (k + 1) * 30;
+    const ang = t < 0 ? 0 : prev + (cur - prev) * ov;
+    $('#ringhand').setAttribute('transform', `rotate(${ang})`);
+  });
+  // camera: slow rotate-in, then match-cut push toward the hero dial (pivot at 1240,540)
+  tl.fromTo('#ring', { rotation: -24, scale: .86 }, { rotation: 0, scale: 1, duration: 3.75, ease: 'power2.out' }, 0);
+  tl.to('#ring', { left: 1240, scale: .78, duration: .3, ease: 'power3.in' }, 3.78);
+  tl.to('#ring', { opacity: 0, duration: .12 }, 3.98);
+})();
+
+/* ---------- S1 · HERO 4–6 s -------------------------------------------- */
+(() => {
+  show('#s1', 3.92, 6.12);
+  const s1 = $('#s1');
+  // match cut: the drawn numeral ring dissolves into the real dial
+  tl.fromTo(s1.querySelectorAll('.bg,.relief,.glow'), { opacity: 0 }, { opacity: 1, duration: .16, ease: 'power1.inOut', immediateRender: false }, 3.92);
+  const w = makeWatch('black', s1);
+  const s = 0.69;
+  tl.fromTo(w.el, { ...at(w, 1240, 540, s * 1.18), rotationX: 16, rotationZ: -9, opacity: 0 },
+    { ...at(w, 1240, 540, s), rotationX: 0, rotationZ: 0, opacity: 1, duration: 1.6, ease: 'expo.out' }, 3.96);
+  tl.to(w.el, { ...at(w, 1100, 548, s * 1.035), duration: .6, ease: 'power2.in' }, 5.56);
+  sheen(w, 4.12, .9);
+  lightPath(s1, 4, 6.1, 75, 20, 62, 55);
+  ['#hA', '#hB'].forEach((id, i) => {
+    const chs = split($(id)); chs.forEach(c => c.classList.add('metal'));
+    tl.fromTo(chs, { yPercent: 115 }, { yPercent: 0, duration: .55, ease: 'expo.out', stagger: .045 }, 4.12 + i * .22);
+  });
+  tl.fromTo('#hRule', { scaleX: 0 }, { scaleX: 1, duration: .6, ease: 'expo.out' }, 4.7);
+  tl.fromTo('#hC', { opacity: 0, letterSpacing: '20px' }, { opacity: 1, letterSpacing: '8.4px', duration: .8, ease: 'expo.out' }, 4.75);
+  tl.fromTo('#hD', { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: .6, ease: 'expo.out' }, 4.95);
+  tl.fromTo('#i1', { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: .5, ease: 'expo.out' }, 5.25);
+  tl.to('#heroText', { x: -60, duration: 2.2, ease: 'none' }, 4.0);
+  flash(4.0, .72, .38);
+})();
+
+/* ---------- S2 · COLOUR RUN 6–10 s (+ push-in words 10–12) ------------- */
+const RUN = [
+  { name: 'royal',  t: 6, wipe: ['inset(0 0 0 100%)', 'inset(0 0 0 0%)'],  from: { dx: 520, dy: 0, ry: -38, rx: 0, k: 1 }, nums: [['١٢', 1350, -120, 470], ['٦', 90, 640, 420]] },
+  { name: 'teal',   t: 7, wipe: ['inset(100% 0 0 0)', 'inset(0% 0 0 0)'],  from: { dx: 0, dy: 560, ry: 0, rx: 34, k: 1 },  nums: [['٣', 1430, 330, 480], ['٩', 70, -40, 440]] },
+  { name: 'ice',    t: 8, wipe: ['circle(0% at 50% 52%)', 'circle(75% at 50% 52%)'], from: { dx: 0, dy: 0, ry: 0, rx: 0, k: 1.75 }, nums: [['٨', 1420, 560, 470], ['١', 160, -70, 470]] },
+  { name: 'silver', t: 9, wipe: ['inset(0 100% 0 0)', 'inset(0 0% 0 0)'],  from: { dx: -520, dy: 0, ry: 38, rx: 0, k: 1 }, nums: [['١٠', 1300, -90, 430], ['٥', 150, 600, 440]] },
+];
+RUN.forEach((r, i) => {
+  const sc = $('#p_' + r.name), C = COL[r.name];
+  const L = bgLayers(sc, { ro: C.dark ? .85 : .75, r2: i % 2 === 1, gl: C.dark ? 'rgba(255,255,255,.14)' : 'rgba(255,255,255,.5)' });
+  const nums = r.nums.map(([t, x, y, s]) => bigNum(sc, t, x, y, s, r.name === 'silver' ? 'blue' : ''));
+  const w = makeWatch(r.name, sc);
+  const s = 0.62, X = 960, Y = 560;
+  const end = r.name === 'silver' ? 12.0 : r.t + 1.12;
+  show(sc, r.t - 0.2, end);
+  tl.fromTo(sc, { clipPath: r.wipe[0] }, { clipPath: r.wipe[1], duration: .34, ease: 'expo.inOut' }, r.t - 0.2);
+  const f = r.from;
+  tl.fromTo(w.el, { ...at(w, X + f.dx, Y + f.dy, s * f.k), rotationY: f.ry, rotationX: f.rx },
+    { ...at(w, X, Y, s), rotationY: 0, rotationX: 0, duration: .9, ease: 'expo.out' }, r.t - 0.18);
+  if (r.name !== 'silver') tl.to(w.el, { ...at(w, X - (f.dx ? Math.sign(f.dx) * 30 : 0), Y - (f.dy ? 20 : 0), s * 1.03), duration: .5, ease: 'none' }, r.t + .72);
+  nums.forEach((n, j) => tl.fromTo(n, { x: f.dx * (1.5 + j * .5), y: f.dy * (1.4 + j * .4), opacity: 0 }, { x: (j ? 30 : -30), y: 0, opacity: 1, duration: 1.2, ease: 'expo.out' }, r.t - .2));
+  sheen(w, r.t + .05, .75);
+  lightPath(sc, r.t - .2, r.t + 1.1, i % 2 ? 30 : 70, 25, i % 2 ? 62 : 38, 60);
+  const lab = idxLabel(sc, i + 2, C.name, !C.dark);
+  tl.fromTo(lab.children, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .45, ease: 'expo.out', stagger: .06 }, r.t + .08);
+  if (r.name === 'silver') {
+    tl.to(lab, { opacity: 0, duration: .2 }, 9.9);
+    // 10–12 : push into the dial while the words land on the beat
+    tl.to(w.el, { ...at(w, X, Y, 1.85), rotationZ: 6, duration: 1.95, ease: 'power2.in' }, 10.0);
+    nums.forEach((n, j) => tl.to(n, { scale: 1.6, x: j ? 380 : -380, opacity: 0, duration: 1.6, ease: 'power2.in' }, 10.2));
+    const words = ['Time', 'speaks', 'your', 'language.'];
+    words.forEach((wd, k) => {
+      const d = el('div', 'xl', sc, wd);
+      Object.assign(d.style, { position: 'absolute', left: 0, right: 0, top: '430px', textAlign: 'center', fontSize: (k === 3 ? 190 : 230) + 'px', color: '#0d3566', textShadow: '0 0 60px rgba(255,255,255,.95),0 0 18px rgba(255,255,255,.9)', opacity: 0 });
+      const t = 10 + k * .5;
+      tl.fromTo(d, { opacity: 0, scale: 1.45, filter: 'blur(14px)' }, { opacity: 1, scale: 1, filter: 'blur(0px)', duration: .28, ease: 'expo.out' }, t);
+      if (k < 3) tl.to(d, { opacity: 0, scale: .9, duration: .12, ease: 'power1.in' }, t + .44);
+      else tl.to(d, { scale: 1.35, opacity: 0, filter: 'blur(10px)', duration: .3, ease: 'power2.in' }, 11.72);
+    });
+    flash(12.0, 1, .4);
+  }
+});
+
+/* ---------- S4 · FEATURES 12–20 s -------------------------------------- */
+function featureText(sc, light, n, title, sub, pos = { left: 120, bottom: 120 }) {
+  const c = light ? '#0e2a4a' : '#ffffff', c2 = light ? '#2b4a69' : 'rgba(255,255,255,.78)';
+  const g = el('div', '', sc);
+  Object.assign(g.style, { position: 'absolute', ...Object.fromEntries(Object.entries(pos).map(([k, v]) => [k, v + 'px'])), color: c, maxWidth: '1250px' });
+  g.innerHTML = `<div style="display:flex;align-items:center;gap:20px;margin-bottom:22px"><span style="font-family:Amiri;font-size:44px">${AR(n)}</span><span class="rule" style="position:relative;width:70px;display:inline-block"></span><span class="lbl" style="font-size:18px;color:${c2}">Feature ${AR(n)}/${AR(4)}</span></div>
+    <div class="xl" style="font-size:90px;font-stretch:112%"><span class="mask"><span>${title[0]}</span></span><span class="mask"><span>${title[1]}</span></span></div>
+    <div class="lbl" style="font-size:20px;margin-top:26px;color:${c2};letter-spacing:.3em">${sub}</div>`;
+  return g;
+}
+function featureIn(g, t) {
+  tl.fromTo(g.querySelector('.rule'), { scaleX: 0 }, { scaleX: 1, duration: .6, ease: 'expo.out' }, t);
+  tl.fromTo(g.querySelectorAll('.mask>span'), { yPercent: 110 }, { yPercent: 0, duration: .6, ease: 'expo.out', stagger: .1 }, t + .05);
+  tl.fromTo(g.children[0].children, { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: .4, stagger: .05, ease: 'expo.out' }, t);
+  tl.fromTo(g.children[2], { opacity: 0, letterSpacing: '14px' }, { opacity: 1, letterSpacing: '6px', duration: .8, ease: 'expo.out' }, t + .3);
+}
+function scrim(sc, css) { const s = el('div', 'scrim', sc); s.style.cssText += css; return s; }
+function dof(sc, fx, fy, blur) { const d = el('div', 'dof', sc); d.style.setProperty('--fx', fx); d.style.setProperty('--fy', fy); d.style.setProperty('--db', blur + 'px'); return d; }
+
+// F1 · Eastern Arabic numerals (royal macro, camera tracks along the numerals right→left)
+(() => {
+  const sc = $('#f1'); show(sc, 12.0, 14.05); bgLayers(sc, {});
+  const w = makeWatch('royal', sc);
+  const s = 1.9;
+  tl.fromTo(w.el, { ...at(w, 1290, 600, s, [W.royal.cx + 35, W.royal.cy - 95]), rotationZ: 8 },
+    { ...at(w, 1150, 610, s * 1.06, [W.royal.cx - 30, W.royal.cy - 100]), rotationZ: 2, duration: 2.05, ease: 'power1.inOut' }, 12.0);
+  tl.fromTo(w.el, { filter: 'blur(18px)' }, { filter: 'blur(0px)', duration: .5, ease: 'power2.out' }, 12.0);
+  sheen(w, 12.5, 1.2);
+  dof(sc, '62%', '48%', 8);
+  scrim(sc, 'inset:0;background:linear-gradient(90deg,rgba(4,12,40,.92) 0%,rgba(4,12,40,.6) 38%,transparent 62%)');
+  const g = featureText(sc, false, 1, ['Eastern', 'Arabic numerals'], 'Applied indices · ' + [1,2,3,4,5,6,7,8,9,10,11,12].map(n => AR(n) + '\u200E').join(' '));
+  featureIn(g, 12.15);
+})();
+// F2 · arabesque dial (teal, light rakes across the embossing)
+(() => {
+  const sc = $('#f2'); show(sc, 14.0, 16.05); bgLayers(sc, {});
+  const w = makeWatch('teal', sc);
+  const s = 1.55, p = [W.teal.cx - 10, W.teal.cy + 40];
+  tl.fromTo(w.el, { ...at(w, 1220, 520, s * 1.1, p), rotationZ: -10 }, { ...at(w, 1180, 560, s, p), rotationZ: -4, duration: 2.05, ease: 'power1.out' }, 14.0);
+  tl.fromTo(w.el, { filter: 'blur(16px)' }, { filter: 'blur(0px)', duration: .45, ease: 'power2.out' }, 14.0);
+  sheen(w, 14.2, 1.7, 150, -50);
+  dof(sc, '60%', '50%', 7);
+  scrim(sc, 'inset:0;background:linear-gradient(90deg,rgba(2,30,40,.92) 0%,rgba(2,30,40,.55) 40%,transparent 64%)');
+  const g = featureText(sc, false, 2, ['Arabesque', 'embossed dial'], 'Inspired by Islamic ornament');
+  featureIn(g, 14.15);
+})();
+// F3 · bilingual day (black, the day wheel rolls MON → الاثنين)
+(() => {
+  const sc = $('#f3'); show(sc, 16.0, 18.05); bgLayers(sc, {});
+  const w = makeWatch('black', sc);
+  const d = W.black;
+  const cell = [d.cx + 45.5, d.cy - 6.6, d.cx + 88.3, d.cy + 15];       // "MON" cell in cut-out px
+  const win = el('div', 'daywin'); w.el.insertBefore(win, w.el.querySelector('svg.sec'));
+  Object.assign(win.style, { left: cell[0] * S3 + 'px', top: cell[1] * S3 + 'px', width: (cell[2] - cell[0]) * S3 + 'px', height: (cell[3] - cell[1]) * S3 + 'px' });
+  const hh = (cell[3] - cell[1]) * S3;
+  const strip = el('div', 'strip', win, `<div style="height:${hh}px;font:700 ${hh * .78}px Archivo;font-stretch:96%;letter-spacing:.02em">MON</div><div class="ar" style="height:${hh}px;font:600 ${hh * .66}px Kufi;direction:rtl">الاثنين</div>`);
+  const s = 2.25, focus = [(cell[0] + cell[2]) / 2 + 8, (cell[1] + cell[3]) / 2];
+  tl.fromTo(w.el, { ...at(w, 1240, 470, s * 1.08, focus), rotationZ: 5 }, { ...at(w, 1220, 500, s, focus), rotationZ: 1, duration: 2.05, ease: 'power1.out' }, 16.0);
+  tl.fromTo(w.el, { filter: 'blur(16px)' }, { filter: 'blur(0px)', duration: .45, ease: 'power2.out' }, 16.0);
+  tl.fromTo(strip, { y: 0 }, { y: -hh, duration: .32, ease: 'back.inOut(1.6)' }, 16.55);
+  sheen(w, 16.7, 1.0);
+  dof(sc, '64%', '46%', 9);
+  scrim(sc, 'inset:0;background:linear-gradient(90deg,rgba(0,0,0,.92) 0%,rgba(0,0,0,.6) 40%,transparent 62%)');
+  const g = featureText(sc, false, 3, ['Day & date', 'in two languages'], 'Arabic · English  —  عربي · English');
+  featureIn(g, 16.15);
+})();
+// F4 · stainless steel (ice, camera glides down the bracelet)
+(() => {
+  const sc = $('#f4'); show(sc, 18.0, 20.02); bgLayers(sc, { ro: .7, gl: 'rgba(255,255,255,.5)' });
+  const w = makeWatch('ice', sc);
+  const s = 1.05;
+  tl.fromTo(w.el, { ...at(w, 700, 780, s), rotationZ: -20 }, { ...at(w, 660, 380, s * 1.04), rotationZ: -14, duration: 1.55, ease: 'power1.inOut' }, 18.0);
+  tl.fromTo(w.el, { filter: 'blur(14px)' }, { filter: 'blur(0px)', duration: .45, ease: 'power2.out' }, 18.0);
+  tl.to(w.el, { ...at(w, 960, 540, .32), rotationZ: 0, filter: 'blur(6px)', duration: .45, ease: 'expo.in' }, 19.55);
+  sheen(w, 18.15, .9); sheen(w, 19.0, .55);
+  const g = featureText(sc, true, 4, ['Stainless', 'steel'], 'Water resist 50 m · 44.5 × 37.5 mm', { right: 120, bottom: 140 });
+  g.style.textAlign = 'right'; g.children[0].style.justifyContent = 'flex-end';
+  featureIn(g, 18.15);
+  tl.to(g, { opacity: 0, x: 60, duration: .3, ease: 'power2.in' }, 19.6);
+  flash(20.0, .9, .35);
+})();
+
+/* ---------- S5 · LINE-UP 20–24 s --------------------------------------- */
+(() => {
+  const sc = $('#lineup'); show(sc, 19.98, 24.02);
+  const lu = $('#lu');
+  const NUMS = [[['١٢', 150, 40, 230], ['٨', -60, 760, 260]], [['١١', 40, 20, 220], ['٦', 230, 820, 240]], [['٥', 230, 30, 240], ['٧', -40, 800, 250]],
+                [['١', 30, 60, 240], ['٤', 220, 800, 240]], [['١٢', 120, 30, 220], ['٩', -30, 790, 250]]];
+  ORDER.forEach((name, i) => {
+    const C = COL[name];
+    const p = el('div', '', lu); Object.assign(p.style, { position: 'absolute', left: i * 384 + 'px', top: 0, width: '384px', height: '1080px', overflow: 'hidden' });
+    p.style.setProperty('--c1', C.c1); p.style.setProperty('--c2', C.c2);
+    const L = bgLayers(p, { ro: C.dark ? .85 : .7, gl: C.dark ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.45)' });
+    L.relief.style.backgroundPosition = `${-i * 384}px 0`;
+    const ns = NUMS[i].map(([t, x, y, s]) => bigNum(p, t, x, y, s, name === 'silver' ? 'blue' : ''));
+    const w = makeWatch(name, p, { fade: true });
+    const s = .29, t = 20 + i * .25, dir = i % 2 ? 1 : -1;
+    tl.fromTo(p, { yPercent: dir * 100 }, { yPercent: 0, duration: .32, ease: 'expo.out' }, t);
+    tl.fromTo(w.el, { ...at(w, 192, 540 + dir * 420, s), rotationZ: dir * 12 }, { ...at(w, 192, 540, s), rotationZ: 0, duration: .7, ease: 'back.out(1.5)' }, t + .03);
+    ns.forEach((n, j) => tl.fromTo(n, { y: dir * (260 + j * 140) }, { y: 0, duration: 1.1, ease: 'expo.out' }, t));
+    tl.to(ns, { yPercent: (j) => (j ? -14 : 14), duration: 2.6, ease: 'none' }, 21.3);
+    p.style.setProperty('--lx', '50%'); p.style.setProperty('--ly', '45%');
+    sheen(w, 21.5 + i * .12, .6); sheen(w, 23.0 + i * .12, .5);
+  });
+  tl.fromTo(lu, { scale: 1, x: 0 }, { scale: 1.07, x: -30, duration: 3.0, ease: 'none' }, 21.0);
+  const g = el('div', 'glass', sc); Object.assign(g.style, { left: '50%', top: '930px', padding: '22px 46px', display: 'flex', gap: '34px', alignItems: 'center', whiteSpace: 'nowrap' });
+  g.innerHTML = `<span class="lbl" style="font-size:24px;font-weight:700;letter-spacing:.32em">Five colours · One language</span><span class="ar" style="font-size:32px;opacity:.85">خمسة ألوان · لغة واحدة</span>`;
+  tl.fromTo(g, { opacity: 0, y: 40, xPercent: -50 }, { opacity: 1, y: 0, xPercent: -50, duration: .6, ease: 'expo.out' }, 21.3);
+  tl.to(g, { opacity: 0, y: 20, duration: .25 }, 23.7);
+  tl.to(lu, { scale: 1.25, filter: 'blur(8px)', duration: .26, ease: 'expo.in' }, 23.76);
+})();
+
+/* ---------- S6 · RAPID MACRO CUTS 24–26 s ------------------------------ */
+(() => {
+  const cuts = [
+    ['m1', 'black', 24.0, 2.6, d => [d.cx, d.cy - 118], 960, 500, 6],
+    ['m2', 'royal', 24.5, 2.1, d => [d.w - 22, d.cy + 4], 1180, 540, -5],
+    ['m3', 'teal', 25.0, 1.75, d => [d.cx, d.h - 120], 960, 560, 8],
+    ['m4', 'ice', 25.5, 2.6, d => [d.cx + 8, d.cy + 4], 960, 540, -4],
+  ];
+  cuts.forEach(([id, name, t, s, pf, X, Y, rz], i) => {
+    const sc = $('#' + id); show(sc, t, t + .5); bgLayers(sc, {});
+    const w = makeWatch(name, sc);
+    const p = pf(W[name]);
+    tl.fromTo(w.el, { ...at(w, X, Y, s * 1.22, p), rotationZ: rz }, { ...at(w, X, Y, s, p), rotationZ: rz * .2, duration: .5, ease: 'expo.out' }, t);
+    sheen(w, t + .02, .42);
+    dof(sc, '50%', '50%', 9);
+    flash(t, .55, .14);
+  });
+})();
+
+/* ---------- S7 · ARABIC TAGLINE 26–28 s -------------------------------- */
+(() => {
+  const sc = $('#tag'); show(sc, 26.0, 28.02); bgLayers(sc, { ro: .7, gl: 'rgba(255,255,255,.6)' });
+  bigNum(sc, '١٢', 1500, -80, 420, 'blue ghost');
+  const w = makeWatch('silver', sc);
+  tl.fromTo(w.el, { ...at(w, 1430, 560, .66), rotationZ: 7, filter: 'blur(4px)' }, { ...at(w, 1400, 545, .7), rotationZ: 0, filter: 'blur(0px)', duration: 2.0, ease: 'power2.out' }, 26.0);
+  sheen(w, 26.4, 1.1);
+  const box = el('div', '', sc); Object.assign(box.style, { position: 'absolute', left: '40px', top: '318px', width: '1000px', textAlign: 'center' });
+  const ar = el('div', '', box, 'الوقت يتكلم لغتك');
+  Object.assign(ar.style, { fontFamily: 'Ruqaa', fontSize: '172px', lineHeight: '1.25', color: '#164a86', direction: 'rtl', filter: 'drop-shadow(0 10px 14px rgba(10,40,80,.18))' });
+  const pen = el('div', '', box); Object.assign(pen.style, { position: 'absolute', top: '40px', width: '26px', height: '170px', borderRadius: '50%', background: 'radial-gradient(closest-side,rgba(120,190,255,.95),rgba(120,190,255,0))', mixBlendMode: 'screen', opacity: 0 });
+  tl.fromTo(ar, { clipPath: 'inset(0 0 0 100%)' }, { clipPath: 'inset(0 0 0 0%)', duration: 1.15, ease: 'power2.inOut' }, 26.1);
+  tl.fromTo(pen, { left: '960px', opacity: 1 }, { left: '20px', duration: 1.15, ease: 'power2.inOut' }, 26.1);
+  tl.to(pen, { opacity: 0, duration: .2 }, 27.2);
+  const en = el('div', 'lbl', box, 'Time speaks your language'); Object.assign(en.style, { color: '#24476d', fontSize: '24px', marginTop: '18px' });
+  tl.fromTo(en, { opacity: 0, letterSpacing: '22px' }, { opacity: 1, letterSpacing: '9px', duration: .9, ease: 'expo.out' }, 26.9);
+  lightPath(sc, 26, 28, 20, 30, 55, 55);
+  tl.to(sc, { opacity: 0, duration: .25, ease: 'power1.in' }, 27.78);
+})();
+
+/* ---------- S8 · END CARD 28–33 s -------------------------------------- */
+(() => {
+  const sc = $('#end'); show(sc, 27.98); bgLayers(sc, { ro: .75 });
+  lightPath(sc, 28, 33, 30, 25, 66, 40);
+  ORDER.forEach((name, i) => {
+    const X = 960 + (i - 2) * 318, Y = 735;
+    const halo = el('div', '', sc); Object.assign(halo.style, { position: 'absolute', left: X - 260 + 'px', top: Y - 300 + 'px', width: '520px', height: '600px', borderRadius: '50%', background: `radial-gradient(closest-side,${COL[name].c1}aa,transparent)`, opacity: 0 });
+    const w = makeWatch(name, sc, { fade: true });
+    const s = .245, t = 28.0 + Math.abs(i - 2) * .07;
+    tl.fromTo(w.el, { ...at(w, X, Y + 260, s * .9), opacity: 0 }, { ...at(w, X, Y, s), opacity: 1, duration: .9, ease: 'expo.out' }, t);
+    tl.to(w.el, { ...at(w, X + (i - 2) * 6, Y - 8, s * 1.03), duration: 4.0, ease: 'none' }, t + .9);
+    tl.fromTo(halo, { opacity: 0, scale: .6 }, { opacity: .9, scale: 1, duration: 1.2, ease: 'expo.out' }, t + .1);
+    sheen(w, 29.2 + i * .1, .7);
+  });
+  const logo = el('div', '', sc, 'CASIO');
+  Object.assign(logo.style, { position: 'absolute', left: 0, right: 0, top: '150px', textAlign: 'center', fontWeight: 900, fontStretch: '118%', fontSize: '150px', letterSpacing: '.03em', lineHeight: 1,
+    background: 'linear-gradient(100deg,#fff 0%,#fff 42%,#9fdcff 49%,#fff 52%,#fff 100%)', backgroundSize: '300% 100%', backgroundPosition: 'var(--sx,100%) 0', webkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' });
+  tl.fromTo(logo, { opacity: 0, letterSpacing: '84px', filter: 'blur(18px)', scale: 1.06 }, { opacity: 1, letterSpacing: '4px', filter: 'blur(0px)', scale: 1, duration: 1.0, ease: 'expo.out' }, 28.4);
+  tl.fromTo(logo, { '--sx': '100%' }, { '--sx': '0%', duration: 1.0, ease: 'power2.inOut' }, 29.0);
+  const sub = el('div', '', sc); Object.assign(sub.style, { position: 'absolute', left: 0, right: 0, top: '318px', textAlign: 'center' });
+  sub.innerHTML = `<div class="lbl" style="font-size:26px;letter-spacing:.5em;color:#e3e6e9">Arabic Dial Collection</div><div class="ar" style="font-size:38px;color:#aeb5bb;margin-top:12px;direction:rtl">مجموعة الأرقام العربية</div>`;
+  tl.fromTo(sub.children, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: .7, ease: 'expo.out', stagger: .15 }, 28.85);
+  const foot = el('div', '', sc); Object.assign(foot.style, { position: 'absolute', left: 0, right: 0, bottom: '52px', textAlign: 'center', display: 'flex', justifyContent: 'center', gap: '40px', alignItems: 'baseline' });
+  foot.innerHTML = `<span class="lbl" style="font-size:18px;color:#9aa2a9">MTP-E735AR</span><span style="width:6px;height:6px;border-radius:50%;background:#59626a;display:inline-block;transform:translateY(-4px)"></span><span class="lbl" style="font-size:18px;color:#c9ced2">Time speaks your language</span><span class="ar" style="font-size:24px;color:#9aa2a9">الوقت يتكلم لغتك</span>`;
+  tl.fromTo(foot, { opacity: 0 }, { opacity: 1, duration: .8, ease: 'power2.out' }, 29.4);
+  flash(28.0, .7, .5);
+  tl.fromTo('#black', { opacity: 0 }, { opacity: 1, duration: .8, ease: 'power1.in', immediateRender: false }, 32.2);
+})();
+
+/* light leaks on the big transitions */
+[[3.9, .5], [11.9, .5], [19.9, .55], [27.9, .6]].forEach(([t, d]) => {
+  tl.fromTo('#leak', { opacity: 0, x: -200 }, { opacity: .9, x: 0, duration: d * .4, ease: 'power2.out', immediateRender: false }, t);
+  tl.to('#leak', { opacity: 0, x: 200, duration: d * .6, ease: 'power2.in' }, t + d * .4);
+});
+tl.set({}, {}, DUR);
+
+/* ---------- per-frame: live seconds hands + grain ---------------------- */
+const tickEase = gsap.parseEase('back.out(2.6)');
+frameHooks.push(t => {
+  const beats = t / BEAT, k = Math.floor(beats), f = beats - k;
+  const step = k + (f < 0.12 ? tickEase(f / 0.12) : 1);
+  for (const w of watches) {
+    if (w.scene && w.scene.style.visibility !== 'visible') continue;
+    const a = 216 + 6 * step + w.offset;
+    w.hand.setAttribute('transform', `rotate(${a.toFixed(3)} ${w.cx} ${w.cy})`);
+  }
+  const inDrop = (t >= 4 && t < 12) || (t >= 20 && t < 26) || (t >= 28 && t < 28.6);
+  const dt = t - Math.floor(t / BEAT) * BEAT;
+  const bump = inDrop ? 0.0065 * Math.exp(-dt / 0.07) : 0;
+  $('#cam').style.transform = bump ? `scale(${(1 + bump).toFixed(5)})` : '';
+  const fr = Math.round(t * 60);
+  const g = $('#grain'); g.style.backgroundPosition = `${(fr * 137) % 384}px ${(fr * 251) % 384}px`;
+});
+
+window.seek = t => { tl.seek(t, false); for (const h of frameHooks) h(t); return t; };
+window.DUR = DUR;
+
+/* ---------- boot ------------------------------------------------------- */
+(async () => {
+  await Promise.all(['900 40px Archivo', '600 40px Kufi', '700 40px Amiri', '700 40px Ruqaa'].map(f => document.fonts.load(f, 'Aب١').catch(() => {})));
+  await document.fonts.ready;
+  const imgs = [...document.images];
+  const urls = ['img/relief.png', 'img/relief_r.png', 'img/grain.png', ...ORDER.map(n => `img/watch_${n}.png`)];
+  await Promise.all([...imgs.map(i => i.decode().catch(() => {})), ...urls.map(u => new Promise(r => { const i = new Image(); i.onload = i.onerror = r; i.src = u; }))]);
+  seek(0);
+  window.READY = true;
+  if (!/render/.test(location.search)) preview();
+})();
+
+function preview() {
+  document.body.classList.add('preview');
+  const st = $('#stage'), fit = () => { const k = Math.min(innerWidth / 1920, innerHeight / 1080); st.style.transform = `scale(${k})`; st.style.position = 'absolute'; st.style.left = (innerWidth - 1920 * k) / 2 + 'px'; st.style.top = (innerHeight - 1080 * k) / 2 + 'px'; };
+  fit(); addEventListener('resize', fit);
+  const au = new Audio('music.wav'); let playing = false;
+  const hud = $('#hud'); hud.textContent = 'click / space: play · ← → : scrub';
+  const loop = () => { if (playing) { seek(au.currentTime); hud.textContent = au.currentTime.toFixed(2) + ' s'; if (au.ended) playing = false; } requestAnimationFrame(loop); };
+  const toggle = () => { if (playing) { au.pause(); playing = false; } else { au.play(); playing = true; } };
+  addEventListener('click', toggle);
+  addEventListener('keydown', e => { if (e.code === 'Space') toggle(); if (e.code === 'ArrowRight') { au.currentTime += .5; seek(au.currentTime); } if (e.code === 'ArrowLeft') { au.currentTime -= .5; seek(au.currentTime); } });
+  loop();
+}
+</script>
+</body>
+</html>
